@@ -1,7 +1,9 @@
 package ru.yole.jkid.deserialization
 
 import ru.yole.jkid.*
+import ru.yole.jkid.serialization.getDateFormatString
 import ru.yole.jkid.serialization.getSerializer
+import java.util.*
 import kotlin.reflect.KClass
 import kotlin.reflect.KParameter
 import kotlin.reflect.full.declaredMemberProperties
@@ -40,9 +42,12 @@ class ClassInfo<T : Any>(cls: KClass<T>) {
         val deserializeClass = property.findAnnotation<DeserializeInterface>()?.targetClass?.java
         jsonNameToDeserializeClassMap[name] = deserializeClass
 
-        val valueSerializer = property.getSerializer()
+        val valueSerializer : ValueSerializer<out Any?>? = property.getSerializer()
                 ?: serializerForType(param.type.javaType)
-                ?: return
+                ?: if (param.type.javaType == Date::class.java)
+                 DateSerializer(property.getDateFormatString())
+                        else null
+
         paramToSerializerMap[param] = valueSerializer
     }
 

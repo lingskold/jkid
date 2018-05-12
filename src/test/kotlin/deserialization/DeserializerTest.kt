@@ -162,3 +162,4 @@ interface ValueIntf {
 data class ValueImpl(override val name: String) : ValueIntf
 
 data class ValueHolder(@DeserializeInterface(ValueImpl::class) val value: ValueIntf)
+

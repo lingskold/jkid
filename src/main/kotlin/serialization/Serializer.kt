@@ -1,6 +1,7 @@
 package ru.yole.jkid.serialization
 
 import ru.yole.jkid.*
+import java.text.SimpleDateFormat
 import kotlin.reflect.KProperty
 import kotlin.reflect.KProperty1
 import kotlin.reflect.full.memberProperties
@@ -36,8 +37,15 @@ private fun StringBuilder.serializeProperty(
     append(": ")
 
     val value = prop.get(obj)
-    val jsonValue = prop.getSerializer()?.toJsonValue(value) ?: value
-    serializePropertyValue(jsonValue)
+
+    val formatString = prop.getDateFormatString()
+    val dataValue  =if (formatString!=null) SimpleDateFormat(formatString).format(value) else null
+    serializePropertyValue(prop.getSerializer()?.toJsonValue(value) ?: dataValue ?: value)
+}
+
+fun KProperty<*>.getDateFormatString(): String? {
+    val dateFormatAnnotation = findAnnotation<DateFormat>()
+    return dateFormatAnnotation?.format
 }
 
 fun KProperty<*>.getSerializer(): ValueSerializer<Any?>? {
@@ -49,6 +57,7 @@ fun KProperty<*>.getSerializer(): ValueSerializer<Any?>? {
     @Suppress("UNCHECKED_CAST")
     return valueSerializer as ValueSerializer<Any?>
 }
+
 
 private fun StringBuilder.serializePropertyValue(value: Any?) {
     when (value) {

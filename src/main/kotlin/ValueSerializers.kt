@@ -2,6 +2,8 @@ package ru.yole.jkid
 
 import ru.yole.jkid.deserialization.JKidException
 import java.lang.reflect.Type
+import java.text.SimpleDateFormat
+import java.util.*
 
 fun serializerForBasicType(type: Type): ValueSerializer<out Any?> {
     assert(type.isPrimitiveOrString()) { "Expected primitive type or String: ${type.typeName}" }
@@ -21,8 +23,21 @@ fun serializerForType(type: Type): ValueSerializer<out Any?>? =
             else -> null
         }
 
+class DateSerializer(private val pattern :String?) : ValueSerializer<Date> {
+    override fun fromJsonValue(jsonValue: Any?): Date {
+        return SimpleDateFormat(pattern).parse(jsonValue.expectedString())
+    }
+    override fun toJsonValue(value: Date): Any? = value.toString()
+}
+
 private fun Any?.expectNumber(): Number {
     if (this !is Number) throw JKidException("Expected number, was: $this")
+    return this
+}
+
+
+private fun Any?.expectedString(): String? {
+    if (this !is String) throw JKidException("Expected string, was $this")
     return this
 }
 
