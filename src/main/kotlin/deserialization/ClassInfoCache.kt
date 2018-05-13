@@ -42,13 +42,15 @@ class ClassInfo<T : Any>(cls: KClass<T>) {
         val deserializeClass = property.findAnnotation<DeserializeInterface>()?.targetClass?.java
         jsonNameToDeserializeClassMap[name] = deserializeClass
 
-        val valueSerializer : ValueSerializer<out Any?>? = property.getSerializer()
+        val dateSerializer: ValueSerializer<out Any?>? = if (param.type.javaType == Date::class.java)
+            DateSerializer(property.getDateFormatString())
+        else null
+        val valueSerializer = property.getSerializer()
                 ?: serializerForType(param.type.javaType)
-                ?: if (param.type.javaType == Date::class.java)
-                 DateSerializer(property.getDateFormatString())
-                        else null
+                ?: dateSerializer
 
-        paramToSerializerMap[param] = valueSerializer
+        if (valueSerializer != null)
+            paramToSerializerMap[param] = valueSerializer
     }
 
     fun getConstructorParameter(propertyName: String): KParameter = jsonNameToParamMap[propertyName]

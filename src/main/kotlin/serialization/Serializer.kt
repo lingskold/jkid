@@ -5,6 +5,7 @@ import java.text.SimpleDateFormat
 import kotlin.reflect.KProperty
 import kotlin.reflect.KProperty1
 import kotlin.reflect.full.memberProperties
+import kotlin.reflect.full.valueParameters
 
 fun serialize(obj: Any): String = buildString { serializeObject(obj) }
 
@@ -38,9 +39,7 @@ private fun StringBuilder.serializeProperty(
 
     val value = prop.get(obj)
 
-    val formatString = prop.getDateFormatString()
-    val dataValue  =if (formatString!=null) SimpleDateFormat(formatString).format(value) else null
-    serializePropertyValue(prop.getSerializer()?.toJsonValue(value) ?: dataValue ?: value)
+    serializePropertyValue(prop.getSerializer()?.toJsonValue(value) ?: value)
 }
 
 fun KProperty<*>.getDateFormatString(): String? {
@@ -49,12 +48,17 @@ fun KProperty<*>.getDateFormatString(): String? {
 }
 
 fun KProperty<*>.getSerializer(): ValueSerializer<Any?>? {
-    val customSerializerAnn = findAnnotation<CustomSerializer>() ?: return null
-    val serializerClass = customSerializerAnn.serializerClass
+    val customSerializerAnn = findAnnotation<CustomSerializer>()
+    val serializerClass = customSerializerAnn?.serializerClass
 
-    val valueSerializer = serializerClass.objectInstance
-            ?: serializerClass.createInstance()
+    val dateSerializer = if (getDateFormatString() != null) DateSerializer(getDateFormatString()) else null
+
+    val valueSerializer = serializerClass?.objectInstance
+            ?: serializerClass?.createInstance()
+            ?: dateSerializer
+
     @Suppress("UNCHECKED_CAST")
+
     return valueSerializer as ValueSerializer<Any?>
 }
 
